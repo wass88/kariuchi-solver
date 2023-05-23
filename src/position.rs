@@ -110,7 +110,7 @@ impl Position {
                 let simple = Position::on_route(x + d);
                 let x = Position::route(x);
                 if let Some(p) = x.can_shortcut() {
-                    vec![simple, Position::to_shortcut(p, d)]
+                    vec![simple, Position::to_shortcut(p, d - 1)]
                 } else {
                     vec![simple]
                 }
@@ -173,6 +173,38 @@ impl Display for Position {
     }
 }
 
+pub fn alignment() -> (usize, usize, Vec<(usize, usize)>) {
+    let mut a = vec![(0, 0); POSITIONS];
+    let cw = 3;
+    let h = ON_CURVE * 2 + 3;
+    let w = 80;
+    a[S_ON_START] = (2, 2);
+    a[S_ON_GOAL] = (2, 2);
+    a[S_ON_CENTER] = (ON_CURVE + 1, OPP_SHORTCUTS * ON_CURVE / 2 * cw);
+    for p in 0..NUM_SHORTCUTS {
+        for i in 0..ON_CURVE {
+            let path = p * ON_CURVE + i;
+            if p < OPP_SHORTCUTS {
+                a[S_ON_ROUTES + path] = (0, path * cw)
+            } else {
+                a[S_ON_ROUTES + path] = (ON_CURVE * 2 + 2, (ON_ROUTES - path - 1) * cw)
+            }
+        }
+    }
+    for p in 0..NUM_SHORTCUTS {
+        for i in 0..ON_SHORTCUT {
+            let path = p * ON_SHORTCUT + i;
+            let skip = ON_CURVE * cw;
+            if p < OPP_SHORTCUTS {
+                a[S_ON_SHORTCUTS + path] = (i + 2, (p + 1) * skip - cw);
+            } else {
+                a[S_ON_SHORTCUTS + path] = (i + NUM_CURVE + 2, (NUM_SHORTCUTS - p - 1) * skip);
+            }
+        }
+    }
+    (h, w, a)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -195,11 +227,11 @@ mod test {
         }
     }
     #[test]
-    fn advance_four() {
+    fn advance_five() {
         for i in 0..POSITIONS {
             let p = Position::from(i);
             print!("{} ->", p);
-            let v = p.advance(4);
+            let v = p.advance(5);
             for x in v {
                 print!(" {}", x);
             }

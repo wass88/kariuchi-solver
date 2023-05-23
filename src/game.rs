@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    position::{Position, OPP_SHORTCUTS, POSITIONS},
+    position::{self, Position, OPP_SHORTCUTS, POSITIONS},
     sticks::Sticks,
 };
 const NUM_PIECES: usize = 4;
@@ -50,7 +50,10 @@ impl State {
     pub fn actions(&self, sticks: Sticks) -> Vec<Action> {
         let my_pieces = self.my_pieces();
         let mut actions = vec![];
-        for i in 0..(POSITIONS - 1) {
+        for i in 0..POSITIONS {
+            if Position::from(i) == Position::goal() {
+                continue;
+            }
             let my_piece = my_pieces[i];
             if my_piece == 0 {
                 continue;
@@ -68,6 +71,9 @@ impl State {
     }
     pub fn is_end(&self) -> bool {
         self.end
+    }
+    pub fn is_first(&self) -> bool {
+        self.first_turn
     }
     fn check_end(&mut self) {
         let mut first = true;
@@ -113,6 +119,30 @@ impl State {
             board[usize::from(pos)] += 1
         }
         board
+    }
+    pub fn visual(&self) -> String {
+        let mut board = vec![0; POSITIONS];
+        for i in 0..NUM_PIECES {
+            let pos = self.first_pos[i];
+            board[usize::from(pos)] += 1;
+            let pos = self.second_pos[i];
+            board[usize::from(pos)] -= 1;
+        }
+        println!("{:?}", board);
+        let (h, w, alignment) = position::alignment();
+        let mut s = vec![" ".repeat(w); h];
+        for i in 0..POSITIONS {
+            let (y, x) = alignment[i];
+            let str = if board[i] == 0 {
+                format!("..")
+            } else {
+                let mark = if board[i] > 0 { "O" } else { "X" };
+                let num = if board[i] > 0 { board[i] } else { -board[i] };
+                format!("{}{}", mark, num)
+            };
+            s[y].replace_range(x..x + 2, &str);
+        }
+        s.join("\n")
     }
 }
 
@@ -232,5 +262,10 @@ mod test {
         assert_eq!(s.second_pos[0], Position::from(4));
         assert_eq!(s.second_pos[1], Position::from(4));
         assert_eq!(s.first_pos[0], Position::from(0));
+    }
+    #[test]
+    fn print_visual() {
+        let s = State::new();
+        println!("{}", s.visual());
     }
 }
