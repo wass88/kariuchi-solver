@@ -59,7 +59,7 @@ impl Evaluate {
     }
     fn rollout(&self, state: &State) -> f64 {
         let mut sum = 0.;
-        for i in 0..self.option.rollout {
+        for _ in 0..self.option.rollout {
             let s = state.clone();
             sum += self.rollout_once(s);
         }

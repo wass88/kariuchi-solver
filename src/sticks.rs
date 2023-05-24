@@ -5,7 +5,7 @@ pub struct Sticks(usize);
 impl Sticks {
     pub fn throw() -> Self {
         let mut num = 0;
-        for i in 0..NUM_STICKS {
+        for _ in 0..NUM_STICKS {
             num += rand::random::<usize>() % 2;
         }
         if num == 0 {

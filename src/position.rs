@@ -61,8 +61,8 @@ impl Position {
         Position(S_ON_CENTER)
     }
     fn shortcut(path: usize, x: usize) -> Self {
-        assert!(0 <= path && path < NUM_SHORTCUTS);
-        assert!(0 <= x && x < ON_SHORTCUT);
+        assert!(path < NUM_SHORTCUTS);
+        assert!(x < ON_SHORTCUT);
         Position(S_ON_SHORTCUTS + path * ON_SHORTCUT + x)
     }
     fn on_route(x: usize) -> Self {

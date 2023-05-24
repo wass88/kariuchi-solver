@@ -18,17 +18,18 @@ fn main() {
         let sticks = sticks::Sticks::throw();
         println!("Throw {}", usize::from(sticks));
         let actions = s.actions(sticks);
+        let tries = 3;
+        let p = evaluate_par(s.clone(), &actions, opt, tries);
         for i in 0..actions.len() {
-            let mut st = s.clone();
-            st.act(actions[i]);
-            print!("{}", st);
-            let p1 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
-            let p2 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
-            let p3 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
-            println!(
-                "- {} : {: <10} [{:0.4}, {:0.4}, {:0.4}]",
-                i, actions[i], p1, p2, p3
-            );
+            print!("- {} : {: <15} [", i, format!("{}", actions[i]));
+            for k in 0..tries {
+                print!("{:0.4}", p[i][k]);
+                if k < tries - 1 {
+                    print!(", ");
+                } else {
+                    println!("]")
+                }
+            }
         }
         if s.is_first() {
             let num = read_int(actions.len());
@@ -36,12 +37,54 @@ fn main() {
             println!("Player {}", act);
             s.act(act);
         } else {
-            let num = rand::random::<usize>() % actions.len();
-            let act = actions[num];
+            let i = p
+                .iter()
+                .map(|a| a.iter().sum::<f64>())
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.total_cmp(b))
+                .map(|(index, _)| index)
+                .unwrap();
+            let act = actions[i];
             println!("CPU {}", act);
             s.act(act);
         }
     }
+}
+
+fn evaluate_par(
+    state: game::State,
+    actions: &[game::Action],
+    opt: evaluate::Opt,
+    tries: usize,
+) -> Vec<Vec<f64>> {
+    use rayon::prelude::*;
+    use std::io::Write;
+    use std::sync::Mutex;
+    let solved = std::sync::Arc::<Mutex<usize>>::new(Mutex::new(0));
+    let max = actions.len() * tries;
+    print!("{} / {}", solved.lock().unwrap(), max);
+    std::io::stdout().flush().unwrap();
+
+    let res = actions
+        .par_iter()
+        .map(|act| {
+            (0..tries)
+                .into_par_iter()
+                .map(|_| {
+                    let mut st = state.clone();
+                    st.act(*act);
+                    let p = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
+                    let mut solved = solved.lock().unwrap();
+                    *solved += 1;
+                    print!("\r{} / {}", solved, max);
+                    std::io::stdout().flush().unwrap();
+                    p
+                })
+                .collect()
+        })
+        .collect();
+    print!("\r");
+    res
 }
 
 fn read_int(max: usize) -> usize {
