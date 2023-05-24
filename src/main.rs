@@ -16,7 +16,12 @@ fn main() {
             break;
         }
         let sticks = sticks::Sticks::throw();
-        println!("Throw {}", usize::from(sticks));
+        print!("Throw {}", usize::from(sticks));
+        if sticks.replay() {
+            println!(" (replay)");
+        } else {
+            println!();
+        }
         let actions = s.actions(sticks);
         let tries = 3;
         let p = evaluate_par(s.clone(), &actions, opt, tries);

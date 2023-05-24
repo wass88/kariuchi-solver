@@ -27,6 +27,9 @@ impl Sticks {
         }
         vec
     }
+    pub fn replay(&self) -> bool {
+        self.0 >= NUM_STICKS
+    }
 }
 impl From<usize> for Sticks {
     fn from(x: usize) -> Self {

@@ -50,7 +50,8 @@ impl Evaluate {
         for act in actions {
             let mut s = state.clone();
             s.act(act);
-            let p = 1. - self.expand(&s, ply - 1);
+            let p = self.expand(&s, ply - 1);
+            let p = if sticks.replay() { p } else { 1. - p };
             if p > res {
                 res = p;
             }
@@ -103,7 +104,7 @@ mod tests {
         let mut state = State::new();
         let goal = Position::goal();
         let back2 = Position::from(usize::from(goal) - 2);
-        state.act(Action::new(Position::from(0), back2, 4));
+        state.act(Action::new(Position::from(0), back2, 4, Sticks::from(1)));
         println!("{}", state);
         let e = Evaluate::new(opt, state.clone());
         let p = e.evaluate();

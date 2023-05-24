@@ -46,7 +46,9 @@ impl State {
             }
         }
         self.check_end();
-        self.first_turn = !self.first_turn;
+        if !act.sticks.replay() {
+            self.first_turn = !self.first_turn;
+        }
     }
     pub fn actions(&self, sticks: Sticks) -> Vec<Action> {
         let my_pieces = self.my_pieces();
@@ -63,7 +65,7 @@ impl State {
             for way in 0..to.len() {
                 let movable = if i == 0 { 1 } else { my_piece };
                 for m in 1..=movable {
-                    let act = Action::new(Position::from(i), to[way], m);
+                    let act = Action::new(Position::from(i), to[way], m, sticks);
                     actions.push(act);
                 }
             }
@@ -186,11 +188,17 @@ pub struct Action {
     at: Position,
     to: Position,
     num: usize,
+    sticks: Sticks,
 }
 impl Action {
-    pub fn new(at: Position, to: Position, num: usize) -> Self {
+    pub fn new(at: Position, to: Position, num: usize, sticks: Sticks) -> Self {
         assert!(num > 0);
-        Action { at, to, num }
+        Action {
+            at,
+            to,
+            num,
+            sticks,
+        }
     }
 }
 impl Display for Action {
