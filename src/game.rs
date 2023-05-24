@@ -1,16 +1,17 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    position::{self, Position, OPP_SHORTCUTS, POSITIONS},
+    position::{self, Position, POSITIONS},
     sticks::Sticks,
 };
 const NUM_PIECES: usize = 4;
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct State {
     first_pos: [Position; NUM_PIECES],
     second_pos: [Position; NUM_PIECES],
     first_turn: bool,
-    end: bool,
+    winner: isize,
 }
 
 impl State {
@@ -19,7 +20,7 @@ impl State {
             first_pos: [Position::start(); NUM_PIECES],
             second_pos: [Position::start(); NUM_PIECES],
             first_turn: true,
-            end: false,
+            winner: 0,
         }
     }
     pub fn act(&mut self, act: Action) {
@@ -70,7 +71,10 @@ impl State {
         actions
     }
     pub fn is_end(&self) -> bool {
-        self.end
+        self.winner != 0
+    }
+    pub fn is_win_first(&self) -> bool {
+        self.winner == 1
     }
     pub fn is_first(&self) -> bool {
         self.first_turn
@@ -86,7 +90,13 @@ impl State {
                 second = false;
             }
         }
-        self.end = first || second;
+        if first {
+            self.winner = 1;
+        } else if second {
+            self.winner = -1;
+        } else {
+            self.winner = 0;
+        }
     }
     fn current_pieces_mut(&mut self) -> &mut [Position; NUM_PIECES] {
         if self.first_turn {
@@ -128,7 +138,6 @@ impl State {
             let pos = self.second_pos[i];
             board[usize::from(pos)] -= 1;
         }
-        println!("{:?}", board);
         let (h, w, alignment) = position::alignment();
         let mut s = vec![" ".repeat(w); h];
         for i in 0..POSITIONS {
@@ -148,8 +157,12 @@ impl State {
 
 impl Display for State {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if self.end {
-            writeln!(f, "end")?;
+        if self.is_end() {
+            writeln!(
+                f,
+                "end: winner {}",
+                if self.winner == 1 { "First" } else { "Second" }
+            )?;
         } else {
             writeln!(
                 f,
@@ -160,7 +173,7 @@ impl Display for State {
         for i in 0..NUM_PIECES {
             write!(f, "{} ", self.first_pos[i])?;
         }
-        writeln!(f)?;
+        write!(f, "/ ")?;
         for i in 0..NUM_PIECES {
             write!(f, "{} ", self.second_pos[i])?;
         }
@@ -175,7 +188,7 @@ pub struct Action {
     num: usize,
 }
 impl Action {
-    fn new(at: Position, to: Position, num: usize) -> Self {
+    pub fn new(at: Position, to: Position, num: usize) -> Self {
         assert!(num > 0);
         Action { at, to, num }
     }

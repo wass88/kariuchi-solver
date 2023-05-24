@@ -1,9 +1,14 @@
+mod evaluate;
 mod game;
 mod position;
 mod sticks;
 
 fn main() {
     let mut s = game::State::new();
+    let opt = evaluate::Opt {
+        ply: 3,
+        rollout: 10,
+    };
     loop {
         println!("{}", s);
         println!("{}", s.visual());
@@ -14,7 +19,16 @@ fn main() {
         println!("Throw {}", usize::from(sticks));
         let actions = s.actions(sticks);
         for i in 0..actions.len() {
-            println!("- {} : {}", i, actions[i]);
+            let mut st = s.clone();
+            st.act(actions[i]);
+            print!("{}", st);
+            let p1 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
+            let p2 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
+            let p3 = 1. - evaluate::Evaluate::new(opt, st.clone()).evaluate();
+            println!(
+                "- {} : {: <10} [{:0.4}, {:0.4}, {:0.4}]",
+                i, actions[i], p1, p2, p3
+            );
         }
         if s.is_first() {
             let num = read_int(actions.len());
